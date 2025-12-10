@@ -4,6 +4,12 @@ import { serverConfig } from './config/server.config';
 import { databaseConfig } from './config/database.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseFactory } from './database/database.factory';
+import { UserController } from './modules/user/user.controller';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { tokenConfig } from './config/token.config';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 @Module({
   imports: [
@@ -11,14 +17,25 @@ import { DatabaseFactory } from './database/database.factory';
       isGlobal: true,
       envFilePath: '.env',
       cache: true,
-      load: [serverConfig, databaseConfig],
+      load: [serverConfig, databaseConfig, tokenConfig],
     }),
     TypeOrmModule.forRootAsync({
       useClass: DatabaseFactory,
       inject: [ConfigService],
     }),
+    UserModule,
+    AuthModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [UserController],
+  providers: [
+    {
+      provide: 'APP_FILTER',
+      useClass: GlobalExceptionFilter,
+    },
+    {
+      provide: 'APP_INTERCEPTOR',
+      useClass: ResponseInterceptor,
+    },
+  ],
 })
 export class AppModule {}
